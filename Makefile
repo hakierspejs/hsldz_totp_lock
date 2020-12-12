@@ -1,10 +1,12 @@
 decrypt:
 	openssl aes-256-cbc -d -a -in shared.secrets.enc -out shared.secrets
 	openssl aes-256-cbc -d -a -in Secrets.h.enc -out Secrets.h
+	openssl aes-256-cbc -d -a -in qrcodes.html.enc -out qrcodes.html
 
 encrypt:
 	openssl aes-256-cbc -a -salt -in shared.secrets -out shared.secrets.enc
 	openssl aes-256-cbc -a -salt -in Secrets.h -out Secrets.h.enc
+	openssl aes-256-cbc -a -salt -in qrcodes.html -out qrcodes.html.enc
 
 genkeys:
 	bash ./gen_secrets.sh
