@@ -30,9 +30,9 @@ const char hexaKeys[ROWS][COLS] = {
 };
 const byte rowPins[ROWS] = {2, 3, 4, 5};
 const byte colPins[COLS] = {6, 7, 8};
-Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS); 
+Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
-// RTC
+// RTC 
 RTC clock;
 
 String userInput = "";
@@ -45,12 +45,12 @@ void setup(){
   pinMode(LOCK_PIN, OUTPUT);
 
   clock.begin();
-  clock.set(__TIMESTAMP__);
+  // clock.set(__TIMESTAMP__);
 }
 
 
 void accessDenied() {
-  tone(BUZZER_PIN, FREQ_ERROR, SOUND_TIME_ERROR); 
+  tone(BUZZER_PIN, FREQ_ERROR, SOUND_TIME_ERROR);
   delay(SOUND_TIME_ERROR);
 }
 
@@ -60,7 +60,7 @@ void unlockTheDoor() {
   tone(BUZZER_PIN, FREQ_OPEN, SOUND_TIME_OPEN);
   delay(SOUND_TIME_OPEN);
   digitalWrite(LOCK_PIN, LOW);
-} 
+}
 
 
 boolean arrayIncludeElement(int data[], int arraySize,  int element) {
@@ -73,12 +73,12 @@ boolean arrayIncludeElement(int data[], int arraySize,  int element) {
 }
 
 
-bool isTOTPCodeValid(String userInput) { 
+bool isTOTPCodeValid(String userInput) {
   Serial.print("userInput: "); Serial.println(userInput);
-  int keyNum = userInput.substring(0, 2).toInt();  
-  Serial.print("keyNum: "); Serial.println(keyNum); 
+  int keyNum = userInput.substring(0, 2).toInt();
+  Serial.print("keyNum: "); Serial.println(keyNum);
   bool keyIsActive = arrayIncludeElement(secrets::keysActive, secrets::hmacKeysCount, keyNum);
-  Serial.print("keyIsActive: "); Serial.println(keyIsActive); 
+  Serial.print("keyIsActive: "); Serial.println(keyIsActive);
   if (!keyIsActive) {
     accessDenied();
     return false;
@@ -86,17 +86,16 @@ bool isTOTPCodeValid(String userInput) {
   clock.read();
   delay(200);
   clock.read();
-  unsigned long currentUnixTimestamp = clock.getUnixTime() + 86400 - 3600;
+  unsigned long currentUnixTimestamp = clock.getUnixTime() + 86400 - 3600 + 10;
   int timeDeviations[3] = {-30, 0, 30};
   String userCode = userInput.substring(2, 8);
-  Serial.print("Time: ");
-  Serial.println(currentUnixTimestamp);
+  Serial.print("Time: "); Serial.println(currentUnixTimestamp);
   TOTP totp = TOTP(secrets::hmacKeys[keyNum], secrets::hmacKeySize);
   for (int i = 0; i < 3; i++) {
     int delta = timeDeviations[i];
     char* correctCode = totp.getCode(currentUnixTimestamp + delta);
-    Serial.println(userCode);
-    Serial.println(correctCode);
+    // Serial.println(userCode);
+    // Serial.println(correctCode);
     if (userCode == correctCode) {
       Serial.println("+++++++++++++++++++++++");
       return userCode == correctCode;
@@ -107,12 +106,12 @@ bool isTOTPCodeValid(String userInput) {
   return false;
 }
 
-
-void loop(){ 
+void loop(){
   digitalWrite(LOCK_PIN, LOW);
 
   boolean openButtonIsDown = digitalRead(BUTTON_OPEN_PIN);
   if (openButtonIsDown) {
+     Serial.println(__TIMESTAMP__);
     unlockTheDoor();
   };
 
@@ -125,7 +124,7 @@ void loop(){
     else if (customKey == '#') {
       if (isTOTPCodeValid(userInput)) {
         unlockTheDoor();
-      }; 
+      };
       userInput = "";
     } else {
       if (userInput.length() == 8) {
@@ -136,4 +135,3 @@ void loop(){
     };
   }
 }
-
