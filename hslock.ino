@@ -1,20 +1,21 @@
 #include "Keypad.h"
 #include "sha1.h"
 #include "TOTP.h"
-#include <Wire.h>
-#include <TroykaRTC.h>
+#include <DS3231.h>
+#include <Wire.h> 
 #include "Secrets.h"
 
 
-#define BUZZER_PIN 9
+#define BUZZER_PIN 10
 #define LOCK_PIN 12
-#define BUTTON_OPEN_PIN 10
+#define BUTTON_OPEN_PIN 11
 
 #define SOUND_TIME_BUTTON_PRESS 50
 #define SOUND_TIME_OPEN 3000
 #define SOUND_TIME_ERROR 750
 
 #define FREQ_BUTTON_PRESS 5000
+#define FREQ_OPEN_BUTTON_PRESS 3000
 #define FREQ_OPEN 2500
 #define FREQ_ERROR 800
 
@@ -33,19 +34,18 @@ const byte colPins[COLS] = {6, 7, 8};
 Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
 // RTC 
-RTC clock;
+RTClib RTC;
 
 String userInput = "";
 
 
 void setup(){
   Serial.begin(9600);
+  Wire.begin();
   pinMode(BUTTON_OPEN_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
-
-  clock.begin();
-  // clock.set(__TIMESTAMP__);
+ 
 }
 
 
@@ -71,7 +71,8 @@ boolean arrayIncludeElement(int data[], int arraySize,  int element) {
   }
   return false;
 }
-
+// ostatni zegar 1608246920 sync
+// 2020-12-26 / 9 days - 23 sec 
 
 bool isTOTPCodeValid(String userInput) {
   Serial.print("userInput: "); Serial.println(userInput);
@@ -82,16 +83,14 @@ bool isTOTPCodeValid(String userInput) {
   if (!keyIsActive) {
     accessDenied();
     return false;
-  };
-  clock.read();
-  delay(200);
-  clock.read();
-  unsigned long currentUnixTimestamp = clock.getUnixTime() + 86400 - 3600 + 10;
-  int timeDeviations[3] = {-30, 0, 30};
+  }; 
+  DateTime now = RTC.now(); 
+  unsigned long currentUnixTimestamp = now.unixtime(); 
+  int timeDeviations[5] = {-60, -30, 0, 30, 60};
   String userCode = userInput.substring(2, 8);
   Serial.print("Time: "); Serial.println(currentUnixTimestamp);
   TOTP totp = TOTP(secrets::hmacKeys[keyNum], secrets::hmacKeySize);
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 5; i++) {
     int delta = timeDeviations[i];
     char* correctCode = totp.getCode(currentUnixTimestamp + delta);
     // Serial.println(userCode);
@@ -106,13 +105,30 @@ bool isTOTPCodeValid(String userInput) {
   return false;
 }
 
-void loop(){
-  digitalWrite(LOCK_PIN, LOW);
 
+void loop(){
+  digitalWrite(LOCK_PIN, LOW); 
+  
   boolean openButtonIsDown = digitalRead(BUTTON_OPEN_PIN);
   if (openButtonIsDown) {
-     Serial.println(__TIMESTAMP__);
-    unlockTheDoor();
+     // Serial.println(__TIMESTAMP__);   
+     int timeout = 30; // ms
+     int iterations = 15; 
+     int limit = 7;
+     int press_counter = 0;
+     for (int i = 0; i < iterations; i++) { 
+       tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
+       delay(timeout); 
+       if (digitalRead(BUTTON_OPEN_PIN) == HIGH) {
+           press_counter += 1;
+       }; 
+     };
+     if (press_counter > limit) {
+        unlockTheDoor(); 
+        isTOTPCodeValid(userInput);
+     } else {
+        press_counter = 0;
+     }; 
   };
 
   char customKey = customKeypad.getKey();
@@ -131,7 +147,7 @@ void loop(){
         userInput = "";
       };
       userInput += customKey;
-      delay(50);
+      delay(100);
     };
   }
 }
