@@ -1,5 +1,6 @@
 import pyotp
 import sys
+import os
 from io import BytesIO
 import pyqrcode
 import typing
@@ -44,7 +45,7 @@ def generate_qr_code(num: int, secret: str, console_print=False) -> str:
     )
     qr_code = pyqrcode.create(uri, error='L')
     svg_io = BytesIO()
-    qr_code.svg(svg_io, scale=17)
+    qr_code.svg(svg_io, scale=10)
     svg_io.seek(0)
     if console_print:
         print(uri)
@@ -62,11 +63,35 @@ def read_secrets() -> typing.Tuple[bytes, ...]:
     return result
 
 
+def generate_html_qr_code(num: int, secret: str) -> str:
+    qrcode = generate_qr_code(num, secret)
+    codes = CODE_HTML_BLOCK.format(key=num, svg=qrcode)
+    filename = "0x{num:02d}x{code}.html".format(num=num, code=b32encode(os.urandom(128)).decode('utf-8').replace('=', ''))
+    with open(filename, 'w') as outfile:
+        outfile.write(CODES_HTML.format(code=codes))
+    print(filename)
+    print("="*100)
+    print("scp ./{filename} hs-ldz.pl:~/jedenGET/data/ && rm ./0x*.html".format(filename=filename))
+    print("="*100)
+    print(" "*100)
+    print("Username: hsldz")
+    print("Password: zielona")
+    print("https://jget.hs-ldz.pl/files/{filename}".format(filename=filename))
+    print("="*100)
+    print(" "*100)
+    return
+
+
 def main() -> None:
     secrets = read_secrets()
+    print(sys.argv)
     if len(sys.argv) > 1:
-        num = int(sys.argv[1])
-        generate_qr_code(num, secrets[num], console_print=True)
+        if sys.argv[1] == 'html':
+            num = int(sys.argv[2])
+            generate_html_qr_code(num, secrets[num])
+        else:
+            num = int(sys.argv[1])
+            generate_qr_code(num, secrets[num], console_print=True)
     else:
         for secret in secrets:
             print_secret(secret)
