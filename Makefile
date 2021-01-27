@@ -20,3 +20,8 @@ genqr:
 showcode:
 	docker run --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm hs-ldz-totp-lock python ./gen_qr_codes.py 1
 
+sim:
+	g++ -DMOCK -fpermissive test.cpp
+
+uno:
+	arduino-cli compile --fqbn arduino:avr:uno --libraries vendor/librares/ hsldz_totp_lock.ino

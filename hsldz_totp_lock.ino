@@ -1,10 +1,13 @@
+#ifndef MOCK
 #include "Keypad.h"
 #include "sha1.h"
 #include "TOTP.h"
 #include <DS3231.h>
 #include <Wire.h> 
-#include "Secrets.h"
+#include "Arduino.h"
+#endif
 
+#include "Secrets.h"
 
 #define BUZZER_PIN 10
 #define LOCK_PIN 12
@@ -74,9 +77,25 @@ boolean arrayIncludeElement(int data[], int arraySize,  int element) {
 // ostatni zegar 1608246920 sync
 // 2020-12-26 / 9 days - 23 sec 
 
+String getUserCode(String userInput) {
+#ifndef MOCK
+    return userInput.substring(2, 8);
+#else
+    return ""; //TODO
+#endif
+}
+
+int getKeyNum(String userInput) {
+#ifndef MOCK
+    return userInput.substring(0, 2).toInt();
+#else
+    return 0; //TODO
+#endif
+}
+
 bool isTOTPCodeValid(String userInput) {
   Serial.print("userInput: "); Serial.println(userInput);
-  int keyNum = userInput.substring(0, 2).toInt();
+  int keyNum = getKeyNum(userInput);
   Serial.print("keyNum: "); Serial.println(keyNum);
   bool keyIsActive = arrayIncludeElement(secrets::keysActive, secrets::hmacKeysCount, keyNum);
   Serial.print("keyIsActive: "); Serial.println(keyIsActive);
@@ -87,7 +106,7 @@ bool isTOTPCodeValid(String userInput) {
   DateTime now = RTC.now(); 
   unsigned long currentUnixTimestamp = now.unixtime(); 
   int timeDeviations[5] = {-60, -30, 0, 30, 60};
-  String userCode = userInput.substring(2, 8);
+  String userCode = getUserCode(userInput);
   Serial.print("Time: "); Serial.println(currentUnixTimestamp);
   TOTP totp = TOTP(secrets::hmacKeys[keyNum], secrets::hmacKeySize);
   for (int i = 0; i < 5; i++) {
