@@ -21,7 +21,7 @@ showcode:
 	docker run --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm hs-ldz-totp-lock python ./gen_qr_codes.py 1
 
 sim:
-	g++ -DMOCK test.cpp
+	g++ -DMOCK test.cpp -o test && ./test
 
 uno:
 	arduino-cli compile --fqbn arduino:avr:uno --libraries vendor/librares/ hsldz_totp_lock.ino
