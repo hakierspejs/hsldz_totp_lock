@@ -66,7 +66,7 @@ void unlockTheDoor() {
 }
 
 
-boolean arrayIncludeElement(int data[], int arraySize,  int element) {
+boolean arrayIncludeElement(const int data[], int arraySize,  int element) {
   for (int i = 0; i < arraySize; i++) {
     if (data[i] == element) {
       return true;

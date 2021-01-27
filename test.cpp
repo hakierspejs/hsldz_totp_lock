@@ -12,15 +12,15 @@ const int OUTPUT=1;
 
 struct Keypad{
     Keypad(char*, const byte [4], const byte [3], const byte&, const byte&){}
-    char getKey() {}
+    char getKey() { return ' '; }
 };
 
 struct DateTime {
-    unsigned long unixtime(){}
+    unsigned long unixtime(){ return 1; }
 };
 
 struct RTClib{
-    DateTime now() {}
+    DateTime now() {return DateTime(); }
 };
 struct {
 
@@ -35,8 +35,10 @@ struct {
 
 struct TOTP{
 
+    char* buffer = (char*) "";
+
     TOTP(const uint8_t [20], const int&){}
-    char* getCode(int x) {}
+    char* getCode(int x) { return buffer; }
 };
 
 void pinMode(int BUTTON_OPEN_PIN, int INPUT){}
