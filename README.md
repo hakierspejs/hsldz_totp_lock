@@ -43,25 +43,22 @@ gen_single_qr_html.sh 12
 ``` 
 You may share the QR-code-HTML in any eligible way.
 
-There is also an ability to print out all QR-codes - you have to decrypt qrcodes.html.enc.
+There is also an ability to print out all QR-codes - you have to decrypt secrets.
 ```
 make decrypt 
 ```
 
-to decrypt secrets use 
-```
-make decrypt
-```
+### Other
 
-to generate new qrcode file
+To generate new qrcode file:
 ```
 make build
 make genqr
 ```
 
-to view one qrcode 
+To view one qrcode:
 ```
 make showcode
 ```
-
+-----------------------------
 Feel free to contribute
