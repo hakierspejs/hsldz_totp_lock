@@ -15,17 +15,16 @@ It's necessary to avoid spontaneous door opening because of an electromagnetic n
 There is also a [DC-DC converter 12V->5V](https://www.aphelektra.com/regulatory-napiecia/6033-modul-przetwornicy-step-down-mp2307-1v-17v-18a.html). 
 
 ### Known issues:
- - too high memory consumption because of in-memory secrets placement, it's necessary to place secrets on the additional i2c memory chip (24c64 e. g.)
  - spontaneous door opening  because of an electromagnetic noise  (solved with software debouncer and LP-filter)
  - spontaneous PinPad presses because of an electromagnetic noise (may be solved by cable with a concentric conducting shield)
  - RTC desynchronization (solved with DS3231)
- 
+
+
 ### Debugging 
-* disconnect 12v power cable from the UPS 
 * disconnect 12v cable from the TOTP-lock 
 * disconnect the pin pad Rj-45 
 * disconnect the electric strike cable 
- 
+
 **Now you can remove (unhook) the TOTP-lock case from the door**
 * disconnect the voltage converter from the Arduino board  
 * disconnect the relay from the Arduino board if you are not going to debug it
@@ -39,26 +38,29 @@ By default, every time the lock opens microcontroller [prints out the Unix times
 ### QR-codes distribution
 There is an ability to generate QR-code of the necessary secret. 
 ``` 
-gen_single_qr_html.sh 12
+make decrypt
+make gen-qr-code KEY_NUM=3
 ``` 
 You may share the QR-code-HTML in any eligible way.
 
-There is also an ability to print out all QR-codes - you have to decrypt secrets.
-```
-make decrypt 
-```
 
 ### Other
 
-To generate new qrcode file:
-```
-make build
-make genqr
-```
-
 To view one qrcode:
 ```
-make showcode
+make decrypt
+make show-qr-code KEY_NUM=3
 ```
+
+To run it locally:
+```
+make generate-example-secrets
+make uno-configure-ds3231 DEVICE_SERIAL=/dev/ttyACM0
+make uno-upload-lock DEVICE_SERIAL=/dev/ttyACM0
+make show-qr-code KEY_NUM=1
+make show-totp-code KEY_NUM=1
+make serial-read DEVICE_SERIAL=/dev/ttyACM0
+```
+
 -----------------------------
 Feel free to contribute

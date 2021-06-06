@@ -11,7 +11,6 @@ jobs:
     - uses: arduino/setup-arduino-cli@v1.1.1
     - name: Install platform and compile
       run: |
-        cp Secrets.h.example Secrets.h
         arduino-cli core update-index
         arduino-cli core install arduino:avr
-        arduino-cli compile --fqbn arduino:avr:uno --libraries vendor/librares/ hslock.ino
+        cd ./hsldz_totp_lock && arduino-cli compile --fqbn arduino:avr:uno --libraries ../vendor/librares/
