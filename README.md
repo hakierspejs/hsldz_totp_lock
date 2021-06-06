@@ -2,10 +2,10 @@
 
 ### Description
 The TOTP-lock is based on Arduino Pro Mini Atmega328 - 5V 16MHz. The parts connected to the microcontroller are: 
- - [the relay](https://allegro.pl/oferta/modul-1-kanalowy-przekaznik-5v-10a-7953863748), which opens the electric strike ([PIN 12](https://github.com/hakierspejs/hsldz_totp_lock/blob/aedc9e4bd50019f3f2bc459a3ce09191bc713dde/hsldz_totp_lock.ino#L10)) 
- - [the pin pad 4x4](https://allegro.pl/oferta/klawiatura-membranowa-numeryczna-4x4-arduino-9611679849), which allows to input TOTP-codes ([PINs 2-8](https://github.com/hakierspejs/hsldz_totp_lock/blob/aedc9e4bd50019f3f2bc459a3ce09191bc713dde/hsldz_totp_lock.ino#L32))
- - the buzzer, to signal about wrong/correct input ([PIN 10](https://github.com/hakierspejs/hsldz_totp_lock/blob/aedc9e4bd50019f3f2bc459a3ce09191bc713dde/hsldz_totp_lock.ino#L9))
- - the button to open the door from the inside  ([PIN 11](https://github.com/hakierspejs/hsldz_totp_lock/blob/aedc9e4bd50019f3f2bc459a3ce09191bc713dde/hsldz_totp_lock.ino#L11))
+ - [the relay](https://allegro.pl/oferta/modul-1-kanalowy-przekaznik-5v-10a-7953863748), which opens the electric strike ([PIN 12](https://github.com/hakierspejs/hsldz_totp_lock/blob/main/hsldz_totp_lock/hsldz_totp_lock.ino#L11)) 
+ - [the pin pad 4x4](https://allegro.pl/oferta/klawiatura-membranowa-numeryczna-4x4-arduino-9611679849), which allows to input TOTP-codes ([PINs 2-8](https://github.com/hakierspejs/hsldz_totp_lock/blob/main/hsldz_totp_lock/hsldz_totp_lock.ino#L35))
+ - the buzzer, to signal about wrong/correct input ([PIN 10](https://github.com/hakierspejs/hsldz_totp_lock/blob/main/hsldz_totp_lock/hsldz_totp_lock.ino#L10))
+ - the button to open the door from the inside  ([PIN 13](https://github.com/hakierspejs/hsldz_totp_lock/blob/main/hsldz_totp_lock/hsldz_totp_lock.ino#L12))
  
 The open-button is connected via a [software debouncer](https://github.com/hakierspejs/hsldz_totp_lock/blob/aedc9e4bd50019f3f2bc459a3ce09191bc713dde/hsldz_totp_lock.ino#L113) and hardware low-pass filter with a pull-up resistor:
 ![image alt](https://i.imgur.com/PGhv3sQ.png)
@@ -44,6 +44,19 @@ make show-totp-code KEY_NUM=1
 You may want to connect to the board via serial interface, for debugging purposes: 
 ```
 make serial-read DEVICE_SERIAL=/dev/ttyACM0
+```
+
+### Maintenance
+There are two maintenance commands, which allow checking the current UNIX timestamp and disabling the necessary door key. Each of them is available only for the maintenance key (key 0).
+To check a current DS3231 timestamp enter:
+```
+*0000000000[6-digits TOTP code]#
+``` 
+As a result, the DS3231 UNIX-timestamp will be played in reverse order [(morse encoding)](https://en.wikipedia.org/wiki/Morse_code).
+
+To disable the door key (for instance key 7):
+```
+*0001070700[6-digits TOTP code]#
 ```
 
 ### Debugging 
