@@ -3,3 +3,5 @@
 *.secrets
 qrcodes.html
 Secrets.h
+*.log
+*.out
