@@ -20,6 +20,32 @@ There is also a [DC-DC converter 12V->5V](https://www.aphelektra.com/regulatory-
  - RTC desynchronization (solved with DS3231)
 
 
+### Running locally
+To run it locally it's a good idea to use an Arduino Uno board. You need to connect a DS3231 RTC, a pin pad, and a buzzer, as a minimum.  
+At first, it's necessary to configure DS3231, you may use the next commands: 
+```
+make generate-example-secrets
+make uno-configure-ds3231 DEVICE_SERIAL=/dev/ttyACM0
+```
+What generates random secrets, sets RTC time, and writes example secrets to DS3231 EEPROM.
+
+Now you are able to upload the TOTP-lock sketch: 
+```
+make uno-upload-lock DEVICE_SERIAL=/dev/ttyACM0
+```
+There is also the ability to print out QR-code in your console:
+```
+make show-qr-code KEY_NUM=1
+```
+To generate TOTP-code directly, without any additional app, use: 
+```
+make show-totp-code KEY_NUM=1
+```
+You may want to connect to the board via serial interface, for debugging purposes: 
+```
+make serial-read DEVICE_SERIAL=/dev/ttyACM0
+```
+
 ### Debugging 
 * disconnect 12v cable from the TOTP-lock 
 * disconnect the pin pad Rj-45 
@@ -28,7 +54,6 @@ There is also a [DC-DC converter 12V->5V](https://www.aphelektra.com/regulatory-
 **Now you can remove (unhook) the TOTP-lock case from the door**
 * disconnect the voltage converter from the Arduino board  
 * disconnect the relay from the Arduino board if you are not going to debug it
-* you may want to disconnect the buzzer because it's too loud
 * connect to the microcontroller via Serial USB-TTL adapter from your laptop
 
 Now you able to upload the sketch via Arduino IDE and see the output in the serial monitor.
@@ -46,20 +71,10 @@ You may share the QR-code-HTML in any eligible way.
 
 ### Other
 
-To view one qrcode:
+To view one QR-code:
 ```
 make decrypt
 make show-qr-code KEY_NUM=3
-```
-
-To run it locally:
-```
-make generate-example-secrets
-make uno-configure-ds3231 DEVICE_SERIAL=/dev/ttyACM0
-make uno-upload-lock DEVICE_SERIAL=/dev/ttyACM0
-make show-qr-code KEY_NUM=1
-make show-totp-code KEY_NUM=1
-make serial-read DEVICE_SERIAL=/dev/ttyACM0
 ```
 
 -----------------------------
