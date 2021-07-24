@@ -1,0 +1,3 @@
+[submodule "vendor/librares/Watchdog"]
+	path = vendor/librares/Watchdog
+	url = git@github.com:janelia-arduino/Watchdog.git
