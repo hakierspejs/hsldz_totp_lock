@@ -50,5 +50,14 @@ serial-read: build
 uno-upload-isp: ac-build
 	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/ArduinoISP && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ && arduino-cli upload --verbose --verify -p $(DEVICE_SERIAL) --fqbn arduino:avr:uno"
 
+ac-compile: ac-build
+	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/ArduinoISP && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/"
+
+sim:
+	g++ -DMOCK test.cpp -o test && ./test
+
+uno:
+	arduino-cli compile --fqbn arduino:avr:uno --libraries vendor/librares/ hsldz_totp_lock.ino
+
 pro-mini-upload-lock: ac-build
 	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/hsldz_totp_lock && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ && arduino-cli upload --verbose --verify -p $(DEVICE_SERIAL) --fqbn arduino:avr:mini --programmer arduinoasisp"
