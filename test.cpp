@@ -61,9 +61,11 @@ void delayMicroseconds(int a){}
 int digitalRead(int pin) { return 1; }
 
 #include "hsldz_totp_lock/hsldz_totp_lock.ino"
+#include <iostream>
 
 int main()
 {
+    std::cout << isTOTPCodeValid("01333333") << std::endl;
     setup();
     for(;;) loop();
 }
