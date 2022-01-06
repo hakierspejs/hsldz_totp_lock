@@ -1,0 +1,25 @@
+FROM ubuntu:20.04
+
+RUN apt update && apt-get install -y bash wget
+
+ARG USER=docker
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd --gid=${GID} ${GID} && useradd -m ${USER} --uid=${UID} -g${GID} -G dialout
+
+RUN cd /tmp/ \
+    && wget https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Linux_64bit.tar.gz \ 
+    && echo '80fb4547fb869086769dade348040864ae77b30d13cf6786d384bebccf4eb7eb  arduino-cli_0.18.3_Linux_64bit.tar.gz' > 0.18.3-checksums.txt \
+    && sha256sum -c ./0.18.3-checksums.txt \
+    && tar -xzvf arduino-cli_0.18.3_Linux_64bit.tar.gz \
+    && cp ./arduino-cli /usr/bin/arduino-cli \
+    && chmod +x /usr/bin/arduino-cli
+
+USER ${UID}:${GID}
+
+WORKDIR /usr/src/app
+
+RUN arduino-cli core update-index && arduino-cli core install arduino:avr
+
+CMD [ "arduino-cli" ]
