@@ -10,6 +10,18 @@ const int HIGH=1;
 const int INPUT=1;
 const int OUTPUT=1;
 
+struct {
+    void initialize() {};
+    void writeBytes(    
+            int&, int, byte []
+
+            ) {};
+    void readBytes(
+
+            int&, int, byte []
+            ) {};
+} eeprom;
+
 struct Keypad{
     Keypad(char*, const byte [4], const byte [3], const byte&, const byte&){}
     char getKey() { return ' '; }
@@ -45,9 +57,10 @@ void pinMode(int BUTTON_OPEN_PIN, int INPUT){}
 void tone(int BUZZER_PIN, int FREQ_BUTTON_PRESS, int SOUND_TIME_BUTTON_PRESS){}
 void digitalWrite(int LOCK_PIN, int HIGH){}
 void delay(int a){}
+void delayMicroseconds(int a){}
 int digitalRead(int pin) { return 1; }
 
-#include "hsldz_totp_lock.ino"
+#include "hsldz_totp_lock/hsldz_totp_lock.ino"
 
 int main()
 {

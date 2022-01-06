@@ -9,6 +9,14 @@
 #include <Eeprom24C04_16.h> 
 #endif
 
+#define EEPROM_ADDRESS 0x57
+#define EEPROM_CODE 32
+
+#ifndef MOCK
+static Eeprom24C32_64 eeprom(EEPROM_ADDRESS);
+#else
+#define word int
+#endif
 
 #define BUZZER_PIN 10
 #define LOCK_PIN 12
@@ -25,15 +33,13 @@
 
 #define MORSE_SOUND_TIME  100  
 #define MORSE_PAUSE 15
-#define MORSE_FREQ 500 
+#define MORSE_FREQ 500
 
-#define EEPROM_ADDRESS 0x57
-#define EEPROM_CODE 32
-static Eeprom24C32_64 eeprom(EEPROM_ADDRESS);
 const word EEPROM_MEMORY_SIZE = EEPROM_CODE /8 * 1024;
 const byte EEPROM_PAGE_COUNTS = EEPROM_CODE;
 const word EEPROM_BATCHES = EEPROM_MEMORY_SIZE / EEPROM_PAGE_COUNTS;
 
+void playMaintenanceMelody(int melody[], int size);
 
 // Keypad
 const byte ROWS = 4;
@@ -207,10 +213,25 @@ bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
     return result;
 }  
 
+String substr(String s, int from, int to) {
+    #ifdef MOCK
+        return s.substr(from, to);
+    #else
+        return s.substring(from, to);
+    #endif
+}
+
+int toInt(String s) {
+    #ifdef MOCK
+        return stoi(s);
+    #else
+        return s.toInt();
+    #endif
+}
 
 bool isTOTPCodeValid(String userInput) {
   // Serial.print("userInput: "); Serial.println(userInput);
-  int keyNum = userInput.substring(0, 2).toInt();
+  int keyNum = toInt(substr(userInput, 0, 2));
   Serial.print("keyNum: "); Serial.println(keyNum); 
   const int hmacKeySize = 20;
   byte keyBytes[hmacKeySize] = { 0 };
@@ -222,7 +243,7 @@ bool isTOTPCodeValid(String userInput) {
   DateTime now = RTC.now(); 
   unsigned long currentUnixTimestamp = now.unixtime(); 
   int timeDeviations[5] = {-60, -30, 0, 30, 60};
-  String userCode = userInput.substring(2, 8);
+  String userCode = substr(userInput, 2, 8);
   Serial.print("Time: "); Serial.println(currentUnixTimestamp);
   TOTP totp = TOTP(keyBytes, hmacKeySize);
   for (int i = 0; i < 5; i++) {
@@ -242,7 +263,7 @@ bool isTOTPCodeValid(String userInput) {
 
 bool isMaintenance(String userInput, String userInputPrev) {
   // Serial.print("userInput: "); Serial.println(userInput);
-  int keyNum = userInput.substring(0, 2).toInt();
+  int keyNum = toInt(substr(userInput, 0, 2));
   // Serial.print("keyNum: "); Serial.println(keyNum); 
   return (( keyNum == 0 ) && ( userInputPrev != ""));
 }
@@ -318,8 +339,8 @@ void makeMaintenance(String userInputPrev) {
   int melodyMainSize = sizeof(melodyMain) / sizeof(int);
 
   playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
-  int command = userInputPrev.substring(2, 4).toInt();
-  Serial.print("raw command "); Serial.println(userInputPrev.substring(2, 4));
+  int command = toInt(substr(userInputPrev, 2, 4));
+  Serial.print("raw command "); Serial.println(substr(userInputPrev, 2, 4));
   Serial.print("command "); Serial.println(command);
 
   if (command == 0) {
@@ -331,8 +352,8 @@ void makeMaintenance(String userInputPrev) {
     playMaintenanceMelody(melodyMain, melodyMainSize);
   }
   if (command == 1) {
-    int keyNum = userInputPrev.substring(4, 6).toInt();
-    int keyNumRepeat = userInputPrev.substring(6, 8).toInt();
+    int keyNum = toInt(substr(userInputPrev, 4, 6));
+    int keyNumRepeat = toInt(substr(userInputPrev, 6, 8));
     if (keyNum == keyNumRepeat) {
         bool result = disableKey(keyNum);
         if (result) {
