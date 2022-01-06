@@ -301,7 +301,7 @@ void playMaintenanceMelody(int melody[], int size) {
     }
 }
 
-bool write_key_eeprom(int key_num, byte keyBytes[], byte key_len, bool is_active)  {
+void write_key_eeprom(int key_num, byte keyBytes[], byte key_len, bool is_active)  {
     bool result = false;
     const byte buffer_size = key_len + 2; 
     byte inputBytes[buffer_size + 1] = { 0 };    
