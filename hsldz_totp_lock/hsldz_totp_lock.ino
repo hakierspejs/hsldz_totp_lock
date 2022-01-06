@@ -179,6 +179,7 @@ byte getChecksum(byte arrayBytes[], byte count) {
 //} 
 
 
+#ifndef MOCK
 bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
 {  
     bool result = false;
@@ -212,6 +213,11 @@ bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
 //    Serial.println("DONE");  
     return result;
 }  
+#else
+bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len) {
+    return true;
+}
+#endif MOCK
 
 String substr(String s, int from, int to) {
     #ifdef MOCK

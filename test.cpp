@@ -1,5 +1,6 @@
 #ifdef MOCK
 #include <string>
+#include <iostream>
 #define makeKeymap(x) ((char*)x)
 typedef std::string String;
 typedef char byte;
@@ -30,7 +31,9 @@ struct RTClib{
 };
 struct {
 
-    template<class T> void println(T x){}
+    template<class T> void println(T x){
+        std::cout << x << std::endl;
+    }
     template<class T> void print(T x){}
     void begin(int x){}
 
@@ -41,7 +44,7 @@ struct {
 
 struct TOTP{
 
-    char* buffer = (char*) "";
+    char* buffer = (char*) "000004";
 
     TOTP(const char [20], const int&){}
     char* getCode(int x) { return buffer; }
@@ -55,12 +58,24 @@ void delayMicroseconds(int a){}
 int digitalRead(int pin) { return 1; }
 
 #include "hsldz_totp_lock/hsldz_totp_lock.ino"
+
+#include <sstream>
+#include <iomanip>
 #include <iostream>
 
 int main()
 {
-    std::cout << isTOTPCodeValid("01333333") << std::endl;
+    for(int i=0; i<1000000; i++) {
+        std::stringstream ss;
+        ss << std::setfill('0') << std::setw(6) << i;
+        std::string s = ss.str();
+        if(isTOTPCodeValid("01" + s))
+        {
+            std::cout << s << std::endl;
+            break;
+        }
+    }
     setup();
-    for(;;) loop();
+//    for(;;) loop();
 }
 #endif
