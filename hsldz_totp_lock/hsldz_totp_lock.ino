@@ -108,7 +108,7 @@ void setup(){
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
   int size = sizeof(melodyMain) / sizeof(int);
-  playMaintenanceMelody(melodyMain, size);
+  //playMaintenanceMelody(melodyMain, size);
 }
 
 
@@ -291,13 +291,13 @@ void playMaintenanceMelody(int melody[], int size) {
       // divided by the note type.
       //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
       int noteDuration = 1000 / 12;
-      buzz(melodyPin, melody[thisNote], noteDuration);
+      //buzz(melodyPin, melody[thisNote], noteDuration);
       // to distinguish the notes, set a minimum time between them.
       // the note's duration + 30% seems to work well:
       int pauseBetweenNotes = noteDuration * 1.30;
       delay(pauseBetweenNotes);
       // stop the tone playing:
-      buzz(melodyPin, 0, noteDuration);
+      //buzz(melodyPin, 0, noteDuration);
     }
 }
 
