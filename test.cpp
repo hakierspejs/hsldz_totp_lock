@@ -12,14 +12,8 @@ const int OUTPUT=1;
 
 struct {
     void initialize() {};
-    void writeBytes(    
-            int&, int, byte []
-
-            ) {};
-    void readBytes(
-
-            int&, int, byte []
-            ) {};
+    void writeBytes(int&, int, byte []) {};
+    void readBytes(int&, int, byte []) {};
 } eeprom;
 
 struct Keypad{
@@ -49,7 +43,7 @@ struct TOTP{
 
     char* buffer = (char*) "";
 
-    TOTP(const uint8_t [20], const int&){}
+    TOTP(const char [20], const int&){}
     char* getCode(int x) { return buffer; }
 };
 
