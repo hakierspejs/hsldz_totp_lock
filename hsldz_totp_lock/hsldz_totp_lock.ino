@@ -1,5 +1,4 @@
 #ifndef MOCK
-#include "Secrets.h"
 #include "Keypad.h"
 #include "sha1.h"
 #include "TOTP.h"
