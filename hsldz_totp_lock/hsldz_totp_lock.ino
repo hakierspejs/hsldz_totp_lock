@@ -140,7 +140,7 @@ void unlockTheDoor(State* state) {
 }
 
 
-boolean arrayIncludeElement(int data[], int arraySize,  int element) {
+const boolean arrayIncludeElement(const int data[], const int arraySize,  const int element) {
   for (int i = 0; i < arraySize; i++) {
     if (data[i] == element) {
       return true;
@@ -150,7 +150,7 @@ boolean arrayIncludeElement(int data[], int arraySize,  int element) {
 }
 
 
-byte getChecksum(byte arrayBytes[], byte count) {  
+const byte getChecksum(const byte arrayBytes[], const byte count) {  
     byte checksum = 0x1A; 
     for (byte i = 0; i < count; i++) { 
         checksum ^= arrayBytes[i];   
@@ -208,7 +208,7 @@ bool read_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len)
 }  
 
 
-bool isTOTPCodeValid(State* state, String userInput) {
+bool isTOTPCodeValid(State* state, const DateTime now, const String userInput) {
   // Serial.print("userInput: "); Serial.println(userInput);
   int keyNum = userInput.substring(0, 2).toInt();
   Serial.print("keyNum: "); Serial.println(keyNum); 
@@ -219,7 +219,6 @@ bool isTOTPCodeValid(State* state, String userInput) {
   if (!is_key_valid) {
     return false;
   }; 
-  DateTime now = state->RTC.now(); 
   unsigned long currentUnixTimestamp = now.unixtime(); 
   int timeDeviations[5] = {-60, -30, 0, 30, 60};
   String userCode = userInput.substring(2, 8);
@@ -240,7 +239,7 @@ bool isTOTPCodeValid(State* state, String userInput) {
 }
 
 
-bool isMaintenance(String userInput, String userInputPrev) {
+const bool isMaintenance(const String userInput, const String userInputPrev) {
   // Serial.print("userInput: "); Serial.println(userInput);
   int keyNum = userInput.substring(0, 2).toInt();
   // Serial.print("keyNum: "); Serial.println(keyNum); 
@@ -263,7 +262,7 @@ void buzz(State* state, int targetPin, long frequency, long length) {
   }
 }
 
-void playMaintenanceMelody(State* state, int melody[], int size) {
+void playMaintenanceMelody(State* state, const int melody[], const int size) {
     int melodyPin = BUZZER_PIN;
     for (int thisNote = 0; thisNote < size; thisNote++) {
       // to calculate the note duration, take one second
@@ -299,7 +298,7 @@ bool write_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len, 
 }
 
 
-bool disableKey(State* state, int keyNum) {
+bool disableKey(State* state, const int keyNum) {
   const int hmacKeySize = 20;
   byte keyBytes[hmacKeySize] = { 0 };
   bool is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
@@ -312,7 +311,7 @@ bool disableKey(State* state, int keyNum) {
 }
 
 
-void makeMaintenance(State* state, String userInputPrev) {
+void makeMaintenance(State* state, const String userInputPrev) {
   Serial.println(userInputPrev);
   int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
   int melodyMainSize = sizeof(melodyMain) / sizeof(int);
@@ -355,12 +354,12 @@ void loop(){
 
   State* state = &global_state;
   state->digitalWrite(LOCK_PIN, LOW);  
-  boolean openButtonIsDown = state->digitalRead(BUTTON_OPEN_PIN);
+  const boolean openButtonIsDown = state->digitalRead(BUTTON_OPEN_PIN);
   if (openButtonIsDown) {
      // Serial.println(__TIMESTAMP__);   
-     int timeout = 30; // ms
-     int iterations = 15; 
-     int limit = 7;
+     const int timeout = 30; // ms
+     const int iterations = 15; 
+     const int limit = 7;
      int press_counter = 0;
      for (int i = 0; i < iterations; i++) { 
        state->tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
@@ -376,7 +375,7 @@ void loop(){
      }; 
   };
 
-  char customKey = state->customKeypad.getKey();
+  const char customKey = state->customKeypad.getKey();
   if (customKey){
     state->tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
     if (customKey == '*') {
@@ -384,7 +383,8 @@ void loop(){
       state->userInputPrev = "";
     }
     else if (customKey == '#') {
-      if (isTOTPCodeValid(state, state->userInput)) {
+      const DateTime now = state->RTC.now(); 
+      if (isTOTPCodeValid(state, now, state->userInput)) {
           if (isMaintenance(state->userInput, state->userInputPrev)) {
             makeMaintenance(state, state->userInputPrev);
           } else {
