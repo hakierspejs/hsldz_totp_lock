@@ -109,7 +109,7 @@ void setup(){
 void echo_morse_reversed_int(State* state, unsigned long value) { 
   // Serial.println(value);
   while (value > 0) {
-    int digit = value % 10;
+    const int digit = value % 10;
     value = value / 10;
     // Serial.println(digit);
     state->delay(MORSE_SOUND_TIME * MORSE_PAUSE); 
@@ -177,21 +177,21 @@ bool read_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len)
 {  
     bool result = false;
     const byte buffer_size = key_len + 2; 
-    byte outputBytes[buffer_size + 1] = { 0 };    
-    word address = word(key_num * int(buffer_size));  
+    const byte outputBytes[buffer_size + 1] = { 0 };    
+    const word address = word(key_num * int(buffer_size));  
     state->eeprom.readBytes(address, buffer_size+1, outputBytes);  
     // showArray(outputBytes, buffer_size); 
     for (byte i = 0; i < key_len; i++)
     {   
         keyBytes[i] = outputBytes[i];
     }
-    byte checksum = getChecksum(outputBytes, buffer_size-1);
+    const byte checksum = getChecksum(outputBytes, buffer_size-1);
     if (checksum == outputBytes[buffer_size-1]) {
       if (outputBytes[buffer_size - 2] == 0xFF) {
         result = true ;
       };
     } else {
-        int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
+        const int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
         playMaintenanceMelody(state, melodyUnderworld, melodyUnderworldSize);
     };
     
@@ -210,23 +210,23 @@ bool read_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len)
 
 bool isTOTPCodeValid(State* state, const DateTime now, const String userInput) {
   // Serial.print("userInput: "); Serial.println(userInput);
-  int keyNum = userInput.substring(0, 2).toInt();
+  const int keyNum = userInput.substring(0, 2).toInt();
   Serial.print("keyNum: "); Serial.println(keyNum); 
   const int hmacKeySize = 20;
-  byte keyBytes[hmacKeySize] = { 0 };
-  bool is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
+  const byte keyBytes[hmacKeySize] = { 0 };
+  const bool is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
   Serial.print("keyIsActive: "); Serial.println(is_key_valid);
   if (!is_key_valid) {
     return false;
   }; 
-  unsigned long currentUnixTimestamp = now.unixtime(); 
-  int timeDeviations[5] = {-60, -30, 0, 30, 60};
-  String userCode = userInput.substring(2, 8);
+  const unsigned long currentUnixTimestamp = now.unixtime(); 
+  const int timeDeviations[5] = {-60, -30, 0, 30, 60};
+  const String userCode = userInput.substring(2, 8);
   Serial.print("Time: "); Serial.println(currentUnixTimestamp);
   TOTP totp = TOTP(keyBytes, hmacKeySize);
   for (int i = 0; i < 5; i++) {
-    int delta = timeDeviations[i];
-    char* correctCode = totp.getCode(currentUnixTimestamp + delta);
+    const int delta = timeDeviations[i];
+    const char* correctCode = totp.getCode(currentUnixTimestamp + delta);
     // Serial.println(userCode);
     // Serial.println(correctCode);
     if (userCode == correctCode) {
@@ -241,17 +241,17 @@ bool isTOTPCodeValid(State* state, const DateTime now, const String userInput) {
 
 const bool isMaintenance(const String userInput, const String userInputPrev) {
   // Serial.print("userInput: "); Serial.println(userInput);
-  int keyNum = userInput.substring(0, 2).toInt();
+  const int keyNum = userInput.substring(0, 2).toInt();
   // Serial.print("keyNum: "); Serial.println(keyNum); 
   return (( keyNum == 0 ) && ( userInputPrev != ""));
 }
 
 
 void buzz(State* state, int targetPin, long frequency, long length) {
-  long delayValue = 1000000 / frequency / 2; // calculate the delay value between transitions
+  const long delayValue = 1000000 / frequency / 2; // calculate the delay value between transitions
   //// 1 second's worth of microseconds, divided by the frequency, then split in half since
   //// there are two phases to each cycle
-  long numCycles = frequency * length / 1000; // calculate the number of cycles for proper timing
+  const long numCycles = frequency * length / 1000; // calculate the number of cycles for proper timing
   //// multiply frequency, which is really cycles per second, by the number of seconds to
   //// get the total number of cycles to produce
   for (long i = 0; i < numCycles; i++) { // for the calculated length of time...
@@ -263,16 +263,16 @@ void buzz(State* state, int targetPin, long frequency, long length) {
 }
 
 void playMaintenanceMelody(State* state, const int melody[], const int size) {
-    int melodyPin = BUZZER_PIN;
+    const int melodyPin = BUZZER_PIN;
+    const int noteDuration = 1000 / 12;
+    const int pauseBetweenNotes = noteDuration * 1.30;
     for (int thisNote = 0; thisNote < size; thisNote++) {
       // to calculate the note duration, take one second
       // divided by the note type.
       //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
-      int noteDuration = 1000 / 12;
       buzz(state, melodyPin, melody[thisNote], noteDuration);
       // to distinguish the notes, set a minimum time between them.
       // the note's duration + 30% seems to work well:
-      int pauseBetweenNotes = noteDuration * 1.30;
       state->delay(pauseBetweenNotes);
       // stop the tone playing:
       buzz(state, melodyPin, 0, noteDuration);
@@ -280,10 +280,10 @@ void playMaintenanceMelody(State* state, const int melody[], const int size) {
 }
 
 bool write_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len, bool is_active)  {
-    bool result = false;
+    const bool result = false;
     const byte buffer_size = key_len + 2; 
     byte inputBytes[buffer_size + 1] = { 0 };    
-    word address = word(key_num * int(buffer_size));  
+    const word address = word(key_num * int(buffer_size));  
     for (byte i = 0; i < key_len; i++) {   
         inputBytes[i] = keyBytes[i];
     };
@@ -292,7 +292,7 @@ bool write_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len, 
     } else {
         inputBytes[buffer_size - 2] = 0x00;
     }
-    byte checksum = getChecksum(inputBytes, buffer_size-1);
+    const byte checksum = getChecksum(inputBytes, buffer_size-1);
     inputBytes[buffer_size-1] = checksum; 
     state->eeprom.writeBytes(address, buffer_size, inputBytes);
 }
@@ -300,10 +300,10 @@ bool write_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len, 
 
 bool disableKey(State* state, const int keyNum) {
   const int hmacKeySize = 20;
-  byte keyBytes[hmacKeySize] = { 0 };
+  const byte keyBytes[hmacKeySize] = { 0 };
   bool is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
   if (is_key_valid) {
-      bool is_active = false;
+      const bool is_active = false;
       write_key_eeprom(state, keyNum, keyBytes, hmacKeySize, is_active); 
       is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
   };
@@ -313,27 +313,27 @@ bool disableKey(State* state, const int keyNum) {
 
 void makeMaintenance(State* state, const String userInputPrev) {
   Serial.println(userInputPrev);
-  int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
-  int melodyMainSize = sizeof(melodyMain) / sizeof(int);
+  const int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
+  const int melodyMainSize = sizeof(melodyMain) / sizeof(int);
 
   playMaintenanceMelody(state, melodyUnderworld, melodyUnderworldSize);
-  int command = userInputPrev.substring(2, 4).toInt();
+  const int command = userInputPrev.substring(2, 4).toInt();
   Serial.print("raw command "); Serial.println(userInputPrev.substring(2, 4));
   Serial.print("command "); Serial.println(command);
 
   if (command == 0) {
     state->delay(1000);
     DateTime now = state->RTC.now(); 
-    unsigned long currentUnixTimestamp = now.unixtime();
+    const unsigned long currentUnixTimestamp = now.unixtime();
     echo_morse_reversed_int(state, currentUnixTimestamp);
     state->delay(1000);
     playMaintenanceMelody(state, melodyMain, melodyMainSize);
   }
   if (command == 1) {
-    int keyNum = userInputPrev.substring(4, 6).toInt();
-    int keyNumRepeat = userInputPrev.substring(6, 8).toInt();
+    const int keyNum = userInputPrev.substring(4, 6).toInt();
+    const int keyNumRepeat = userInputPrev.substring(6, 8).toInt();
     if (keyNum == keyNumRepeat) {
-        bool result = disableKey(state, keyNum);
+        const bool result = disableKey(state, keyNum);
         if (result) {
             accessDenied(state);
             state->delay(500);
