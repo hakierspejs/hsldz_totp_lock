@@ -7,25 +7,25 @@
 #include <Eeprom24C04_16.h> 
 
 
-#define BUZZER_PIN 10
-#define LOCK_PIN 12
-#define BUTTON_OPEN_PIN 13
+const int BUZZER_PIN = 10;
+const int LOCK_PIN = 12;
+const int BUTTON_OPEN_PIN = 13;
 
-#define SOUND_TIME_BUTTON_PRESS 50
-#define SOUND_TIME_OPEN 3000
-#define SOUND_TIME_ERROR 750
+const int SOUND_TIME_BUTTON_PRESS = 50;
+const int SOUND_TIME_OPEN = 3000;
+const int SOUND_TIME_ERROR = 750;
 
-#define FREQ_BUTTON_PRESS 5000
-#define FREQ_OPEN_BUTTON_PRESS 3000
-#define FREQ_OPEN 2500
-#define FREQ_ERROR 800
+const int FREQ_BUTTON_PRESS = 5000;
+const int FREQ_OPEN_BUTTON_PRESS = 3000;
+const int FREQ_OPEN = 2500;
+const int FREQ_ERROR = 800;
 
-#define MORSE_SOUND_TIME  100  
-#define MORSE_PAUSE 15
-#define MORSE_FREQ 500 
+const int MORSE_SOUND_TIME =  100  ;
+const int MORSE_PAUSE = 15;
+const int MORSE_FREQ = 500 ;
 
-#define EEPROM_ADDRESS 0x57
-#define EEPROM_CODE 32
+const int EEPROM_ADDRESS = 0x57;
+const int EEPROM_CODE = 32;
 const word EEPROM_MEMORY_SIZE = EEPROM_CODE /8 * 1024;
 const byte EEPROM_PAGE_COUNTS = EEPROM_CODE;
 const word EEPROM_BATCHES = EEPROM_MEMORY_SIZE / EEPROM_PAGE_COUNTS;
@@ -70,15 +70,15 @@ const bool morseKeys[10][5] = {
 };
 
 
-#define NOTE_A3  220
-#define NOTE_AS3 233
-#define NOTE_C4  262
-#define NOTE_A4  440
-#define NOTE_AS4 466
-#define NOTE_C5  523
-#define NOTE_C7  2093
-#define NOTE_E7  2637
-#define NOTE_G7  3136
+const int NOTE_A3 =  220;
+const int NOTE_AS3 = 233;
+const int NOTE_C4 =  262;
+const int NOTE_A4 =  440;
+const int NOTE_AS4 = 466;
+const int NOTE_C5 =  523;
+const int NOTE_C7 =  2093;
+const int NOTE_E7 =  2637;
+const int NOTE_G7 =  3136;
 
 const int melodyMain[] = {
   NOTE_E7, NOTE_E7, 0, NOTE_E7,
