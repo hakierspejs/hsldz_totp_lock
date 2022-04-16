@@ -101,7 +101,7 @@ void setup(){
   pinMode(BUTTON_OPEN_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
-  int size = sizeof(melodyMain) / sizeof(int);
+  const int size = sizeof(melodyMain) / sizeof(int);
   playMaintenanceMelody(state, melodyMain, size);
 }
 
