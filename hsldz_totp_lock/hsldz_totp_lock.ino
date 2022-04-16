@@ -80,13 +80,13 @@ const bool morseKeys[10][5] = {
 #define NOTE_E7  2637
 #define NOTE_G7  3136
 
-int melodyMain[] = {
+const int melodyMain[] = {
   NOTE_E7, NOTE_E7, 0, NOTE_E7,
   0, NOTE_C7, NOTE_E7, 0,
   NOTE_G7, 0, 0,  0,
 };
 
-int melodyUnderworld[] = {
+const int melodyUnderworld[] = {
   NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
   NOTE_AS3, NOTE_AS4,
 };
