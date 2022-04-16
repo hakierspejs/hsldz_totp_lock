@@ -52,7 +52,7 @@ struct State {
     void (*tone)(uint8_t, unsigned int, long unsigned int) = tone;
     int (*digitalRead)(uint8_t) = digitalRead;
     void (*delayMicroseconds)(unsigned int) = delayMicroseconds;
-} state;
+} global_state;
 
 const bool morseKeys[10][5] = {
   {false, false, false, false, false}, // 0
@@ -95,48 +95,49 @@ String userInputPrev = "";
 
 
 void setup(){
+  State* state = &global_state;
   Serial.begin(9600);
   Wire.begin();
-  state.eeprom.initialize();
+  state->eeprom.initialize();
   pinMode(BUTTON_OPEN_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
   int size = sizeof(melodyMain) / sizeof(int);
-  playMaintenanceMelody(melodyMain, size);
+  playMaintenanceMelody(state, melodyMain, size);
 }
 
 
-void echo_morse_reversed_int(unsigned long value) { 
+void echo_morse_reversed_int(State* state, unsigned long value) { 
   // Serial.println(value);
   while (value > 0) {
     int digit = value % 10;
     value = value / 10;
     // Serial.println(digit);
-    state.delay(MORSE_SOUND_TIME * MORSE_PAUSE); 
+    state->delay(MORSE_SOUND_TIME * MORSE_PAUSE); 
     for(int i =0; i < 5; i++ ) { 
       if (morseKeys[digit][i]) {
-          state.tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME);
-          state.delay(MORSE_SOUND_TIME + MORSE_SOUND_TIME); 
+          state->tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME);
+          state->delay(MORSE_SOUND_TIME + MORSE_SOUND_TIME); 
       } else {
-          state.tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME * 3);
-          state.delay(MORSE_SOUND_TIME * 3 + MORSE_SOUND_TIME); 
+          state->tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME * 3);
+          state->delay(MORSE_SOUND_TIME * 3 + MORSE_SOUND_TIME); 
       }; 
     } 
   } 
 }
 
 
-void accessDenied() {
-  state.tone(BUZZER_PIN, FREQ_ERROR, SOUND_TIME_ERROR);
-  state.delay(SOUND_TIME_ERROR);
+void accessDenied(State* state) {
+  state->tone(BUZZER_PIN, FREQ_ERROR, SOUND_TIME_ERROR);
+  state->delay(SOUND_TIME_ERROR);
 }
 
 
-void unlockTheDoor() {
-  state.digitalWrite(LOCK_PIN, HIGH);
-  state.tone(BUZZER_PIN, FREQ_OPEN, SOUND_TIME_OPEN);
-  state.delay(SOUND_TIME_OPEN);
-  state.digitalWrite(LOCK_PIN, LOW);
+void unlockTheDoor(State* state) {
+  state->digitalWrite(LOCK_PIN, HIGH);
+  state->tone(BUZZER_PIN, FREQ_OPEN, SOUND_TIME_OPEN);
+  state->delay(SOUND_TIME_OPEN);
+  state->digitalWrite(LOCK_PIN, LOW);
 }
 
 
@@ -173,13 +174,13 @@ byte getChecksum(byte arrayBytes[], byte count) {
 //} 
 
 
-bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
+bool read_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len)
 {  
     bool result = false;
     const byte buffer_size = key_len + 2; 
     byte outputBytes[buffer_size + 1] = { 0 };    
     word address = word(key_num * int(buffer_size));  
-    state.eeprom.readBytes(address, buffer_size+1, outputBytes);  
+    state->eeprom.readBytes(address, buffer_size+1, outputBytes);  
     // showArray(outputBytes, buffer_size); 
     for (byte i = 0; i < key_len; i++)
     {   
@@ -192,7 +193,7 @@ bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
       };
     } else {
         int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
-        playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
+        playMaintenanceMelody(state, melodyUnderworld, melodyUnderworldSize);
     };
     
 //    Serial.print(" result- "); 
@@ -208,18 +209,18 @@ bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
 }  
 
 
-bool isTOTPCodeValid(String userInput) {
+bool isTOTPCodeValid(State* state, String userInput) {
   // Serial.print("userInput: "); Serial.println(userInput);
   int keyNum = userInput.substring(0, 2).toInt();
   Serial.print("keyNum: "); Serial.println(keyNum); 
   const int hmacKeySize = 20;
   byte keyBytes[hmacKeySize] = { 0 };
-  bool is_key_valid = read_key_eeprom(keyNum, keyBytes, hmacKeySize); 
+  bool is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
   Serial.print("keyIsActive: "); Serial.println(is_key_valid);
   if (!is_key_valid) {
     return false;
   }; 
-  DateTime now = state.RTC.now(); 
+  DateTime now = state->RTC.now(); 
   unsigned long currentUnixTimestamp = now.unixtime(); 
   int timeDeviations[5] = {-60, -30, 0, 30, 60};
   String userCode = userInput.substring(2, 8);
@@ -248,7 +249,7 @@ bool isMaintenance(String userInput, String userInputPrev) {
 }
 
 
-void buzz(int targetPin, long frequency, long length) {
+void buzz(State* state, int targetPin, long frequency, long length) {
   long delayValue = 1000000 / frequency / 2; // calculate the delay value between transitions
   //// 1 second's worth of microseconds, divided by the frequency, then split in half since
   //// there are two phases to each cycle
@@ -256,31 +257,31 @@ void buzz(int targetPin, long frequency, long length) {
   //// multiply frequency, which is really cycles per second, by the number of seconds to
   //// get the total number of cycles to produce
   for (long i = 0; i < numCycles; i++) { // for the calculated length of time...
-    state.digitalWrite(targetPin, HIGH); // write the buzzer pin high to push out the diaphram
+    state->digitalWrite(targetPin, HIGH); // write the buzzer pin high to push out the diaphram
     delayMicroseconds(delayValue); // wait for the calculated delay value
-    state.digitalWrite(targetPin, LOW); // write the buzzer pin low to pull back the diaphram
+    state->digitalWrite(targetPin, LOW); // write the buzzer pin low to pull back the diaphram
     delayMicroseconds(delayValue); // wait again or the calculated delay value
   }
 }
 
-void playMaintenanceMelody(int melody[], int size) {
+void playMaintenanceMelody(State* state, int melody[], int size) {
     int melodyPin = BUZZER_PIN;
     for (int thisNote = 0; thisNote < size; thisNote++) {
       // to calculate the note duration, take one second
       // divided by the note type.
       //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
       int noteDuration = 1000 / 12;
-      buzz(melodyPin, melody[thisNote], noteDuration);
+      buzz(state, melodyPin, melody[thisNote], noteDuration);
       // to distinguish the notes, set a minimum time between them.
       // the note's duration + 30% seems to work well:
       int pauseBetweenNotes = noteDuration * 1.30;
-      state.delay(pauseBetweenNotes);
+      state->delay(pauseBetweenNotes);
       // stop the tone playing:
-      buzz(melodyPin, 0, noteDuration);
+      buzz(state, melodyPin, 0, noteDuration);
     }
 }
 
-bool write_key_eeprom(int key_num, byte keyBytes[], byte key_len, bool is_active)  {
+bool write_key_eeprom(State* state, int key_num, byte keyBytes[], byte key_len, bool is_active)  {
     bool result = false;
     const byte buffer_size = key_len + 2; 
     byte inputBytes[buffer_size + 1] = { 0 };    
@@ -295,57 +296,57 @@ bool write_key_eeprom(int key_num, byte keyBytes[], byte key_len, bool is_active
     }
     byte checksum = getChecksum(inputBytes, buffer_size-1);
     inputBytes[buffer_size-1] = checksum; 
-    state.eeprom.writeBytes(address, buffer_size, inputBytes);
+    state->eeprom.writeBytes(address, buffer_size, inputBytes);
 }
 
 
-bool disableKey(int keyNum) {
+bool disableKey(State* state, int keyNum) {
   const int hmacKeySize = 20;
   byte keyBytes[hmacKeySize] = { 0 };
-  bool is_key_valid = read_key_eeprom(keyNum, keyBytes, hmacKeySize); 
+  bool is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
   if (is_key_valid) {
       bool is_active = false;
-      write_key_eeprom(keyNum, keyBytes, hmacKeySize, is_active); 
-      is_key_valid = read_key_eeprom(keyNum, keyBytes, hmacKeySize); 
+      write_key_eeprom(state, keyNum, keyBytes, hmacKeySize, is_active); 
+      is_key_valid = read_key_eeprom(state, keyNum, keyBytes, hmacKeySize); 
   };
   return is_key_valid;
 }
 
 
-void makeMaintenance(String userInputPrev) {
+void makeMaintenance(State* state, String userInputPrev) {
   Serial.println(userInputPrev);
   int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
   int melodyMainSize = sizeof(melodyMain) / sizeof(int);
 
-  playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
+  playMaintenanceMelody(state, melodyUnderworld, melodyUnderworldSize);
   int command = userInputPrev.substring(2, 4).toInt();
   Serial.print("raw command "); Serial.println(userInputPrev.substring(2, 4));
   Serial.print("command "); Serial.println(command);
 
   if (command == 0) {
-    state.delay(1000);
-    DateTime now = state.RTC.now(); 
+    state->delay(1000);
+    DateTime now = state->RTC.now(); 
     unsigned long currentUnixTimestamp = now.unixtime();
-    echo_morse_reversed_int(currentUnixTimestamp);
-    state.delay(1000);
-    playMaintenanceMelody(melodyMain, melodyMainSize);
+    echo_morse_reversed_int(state, currentUnixTimestamp);
+    state->delay(1000);
+    playMaintenanceMelody(state, melodyMain, melodyMainSize);
   }
   if (command == 1) {
     int keyNum = userInputPrev.substring(4, 6).toInt();
     int keyNumRepeat = userInputPrev.substring(6, 8).toInt();
     if (keyNum == keyNumRepeat) {
-        bool result = disableKey(keyNum);
+        bool result = disableKey(state, keyNum);
         if (result) {
-            accessDenied();
-            state.delay(500);
-            playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
+            accessDenied(state);
+            state->delay(500);
+            playMaintenanceMelody(state, melodyUnderworld, melodyUnderworldSize);
         } else {
-            playMaintenanceMelody(melodyMain, melodyMainSize);
+            playMaintenanceMelody(state, melodyMain, melodyMainSize);
         };
     } else {
-      accessDenied();
-      state.delay(500);
-      playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
+      accessDenied(state);
+      state->delay(500);
+      playMaintenanceMelody(state, melodyUnderworld, melodyUnderworldSize);
     };
   };
 }
@@ -353,8 +354,9 @@ void makeMaintenance(String userInputPrev) {
 
 void loop(){
 
-  state.digitalWrite(LOCK_PIN, LOW);  
-  boolean openButtonIsDown = state.digitalRead(BUTTON_OPEN_PIN);
+  State* state = &global_state;
+  state->digitalWrite(LOCK_PIN, LOW);  
+  boolean openButtonIsDown = state->digitalRead(BUTTON_OPEN_PIN);
   if (openButtonIsDown) {
      // Serial.println(__TIMESTAMP__);   
      int timeout = 30; // ms
@@ -362,35 +364,35 @@ void loop(){
      int limit = 7;
      int press_counter = 0;
      for (int i = 0; i < iterations; i++) { 
-       state.tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
-       state.delay(timeout); 
-       if (state.digitalRead(BUTTON_OPEN_PIN) == HIGH) {
+       state->tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
+       state->delay(timeout); 
+       if (state->digitalRead(BUTTON_OPEN_PIN) == HIGH) {
            press_counter += 1;
        }; 
      };
      if (press_counter > limit) {
-        unlockTheDoor(); 
+        unlockTheDoor(state); 
      } else {
         press_counter = 0;
      }; 
   };
 
-  char customKey = state.customKeypad.getKey();
+  char customKey = state->customKeypad.getKey();
   if (customKey){
-    state.tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
+    state->tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
     if (customKey == '*') {
       userInput = "";
       userInputPrev = "";
     }
     else if (customKey == '#') {
-      if (isTOTPCodeValid(userInput)) {
+      if (isTOTPCodeValid(state, userInput)) {
           if (isMaintenance(userInput, userInputPrev)) {
-            makeMaintenance(userInputPrev);
+            makeMaintenance(state, userInputPrev);
           } else {
-            unlockTheDoor();
+            unlockTheDoor(state);
           };
       } else {
-         accessDenied();
+         accessDenied(state);
       };
       userInput = "";
       userInputPrev = "";
@@ -400,7 +402,7 @@ void loop(){
         userInput = "";
       };
       userInput += customKey;
-      state.delay(100);
+      state->delay(100);
     };
   }
 }
