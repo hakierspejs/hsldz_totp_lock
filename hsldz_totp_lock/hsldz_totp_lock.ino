@@ -26,7 +26,6 @@
 
 #define EEPROM_ADDRESS 0x57
 #define EEPROM_CODE 32
-static Eeprom24C32_64 eeprom(EEPROM_ADDRESS);
 const word EEPROM_MEMORY_SIZE = EEPROM_CODE /8 * 1024;
 const byte EEPROM_PAGE_COUNTS = EEPROM_CODE;
 const word EEPROM_BATCHES = EEPROM_MEMORY_SIZE / EEPROM_PAGE_COUNTS;
@@ -44,12 +43,16 @@ const char hexaKeys[ROWS][COLS] = {
 const byte rowPins[ROWS] = {2, 3, 4, 5};
 const byte colPins[COLS] = {6, 7, 8}; 
 
-Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
-
-// RTC 
-RTClib RTC;
-
-
+struct State {
+    Eeprom24C32_64 eeprom = Eeprom24C32_64(EEPROM_ADDRESS);
+    RTClib RTC;
+    Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
+    void (*delay)(unsigned long) = delay;
+    void (*digitalWrite)(uint8_t, uint8_t ) = digitalWrite;
+    void (*tone)(uint8_t, unsigned int, long unsigned int) = tone;
+    int (*digitalRead)(uint8_t) = digitalRead;
+    void (*delayMicroseconds)(unsigned int) = delayMicroseconds;
+} state;
 
 const bool morseKeys[10][5] = {
   {false, false, false, false, false}, // 0
@@ -94,7 +97,7 @@ String userInputPrev = "";
 void setup(){
   Serial.begin(9600);
   Wire.begin();
-  eeprom.initialize();
+  state.eeprom.initialize();
   pinMode(BUTTON_OPEN_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
@@ -109,14 +112,14 @@ void echo_morse_reversed_int(unsigned long value) {
     int digit = value % 10;
     value = value / 10;
     // Serial.println(digit);
-    delay(MORSE_SOUND_TIME * MORSE_PAUSE); 
+    state.delay(MORSE_SOUND_TIME * MORSE_PAUSE); 
     for(int i =0; i < 5; i++ ) { 
       if (morseKeys[digit][i]) {
-          tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME);
-          delay(MORSE_SOUND_TIME + MORSE_SOUND_TIME); 
+          state.tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME);
+          state.delay(MORSE_SOUND_TIME + MORSE_SOUND_TIME); 
       } else {
-          tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME * 3);
-          delay(MORSE_SOUND_TIME * 3 + MORSE_SOUND_TIME); 
+          state.tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME * 3);
+          state.delay(MORSE_SOUND_TIME * 3 + MORSE_SOUND_TIME); 
       }; 
     } 
   } 
@@ -124,16 +127,16 @@ void echo_morse_reversed_int(unsigned long value) {
 
 
 void accessDenied() {
-  tone(BUZZER_PIN, FREQ_ERROR, SOUND_TIME_ERROR);
-  delay(SOUND_TIME_ERROR);
+  state.tone(BUZZER_PIN, FREQ_ERROR, SOUND_TIME_ERROR);
+  state.delay(SOUND_TIME_ERROR);
 }
 
 
 void unlockTheDoor() {
-  digitalWrite(LOCK_PIN, HIGH);
-  tone(BUZZER_PIN, FREQ_OPEN, SOUND_TIME_OPEN);
-  delay(SOUND_TIME_OPEN);
-  digitalWrite(LOCK_PIN, LOW);
+  state.digitalWrite(LOCK_PIN, HIGH);
+  state.tone(BUZZER_PIN, FREQ_OPEN, SOUND_TIME_OPEN);
+  state.delay(SOUND_TIME_OPEN);
+  state.digitalWrite(LOCK_PIN, LOW);
 }
 
 
@@ -176,7 +179,7 @@ bool read_key_eeprom(int key_num, byte keyBytes[], byte key_len)
     const byte buffer_size = key_len + 2; 
     byte outputBytes[buffer_size + 1] = { 0 };    
     word address = word(key_num * int(buffer_size));  
-    eeprom.readBytes(address, buffer_size+1, outputBytes);  
+    state.eeprom.readBytes(address, buffer_size+1, outputBytes);  
     // showArray(outputBytes, buffer_size); 
     for (byte i = 0; i < key_len; i++)
     {   
@@ -216,7 +219,7 @@ bool isTOTPCodeValid(String userInput) {
   if (!is_key_valid) {
     return false;
   }; 
-  DateTime now = RTC.now(); 
+  DateTime now = state.RTC.now(); 
   unsigned long currentUnixTimestamp = now.unixtime(); 
   int timeDeviations[5] = {-60, -30, 0, 30, 60};
   String userCode = userInput.substring(2, 8);
@@ -253,9 +256,9 @@ void buzz(int targetPin, long frequency, long length) {
   //// multiply frequency, which is really cycles per second, by the number of seconds to
   //// get the total number of cycles to produce
   for (long i = 0; i < numCycles; i++) { // for the calculated length of time...
-    digitalWrite(targetPin, HIGH); // write the buzzer pin high to push out the diaphram
+    state.digitalWrite(targetPin, HIGH); // write the buzzer pin high to push out the diaphram
     delayMicroseconds(delayValue); // wait for the calculated delay value
-    digitalWrite(targetPin, LOW); // write the buzzer pin low to pull back the diaphram
+    state.digitalWrite(targetPin, LOW); // write the buzzer pin low to pull back the diaphram
     delayMicroseconds(delayValue); // wait again or the calculated delay value
   }
 }
@@ -271,7 +274,7 @@ void playMaintenanceMelody(int melody[], int size) {
       // to distinguish the notes, set a minimum time between them.
       // the note's duration + 30% seems to work well:
       int pauseBetweenNotes = noteDuration * 1.30;
-      delay(pauseBetweenNotes);
+      state.delay(pauseBetweenNotes);
       // stop the tone playing:
       buzz(melodyPin, 0, noteDuration);
     }
@@ -292,7 +295,7 @@ bool write_key_eeprom(int key_num, byte keyBytes[], byte key_len, bool is_active
     }
     byte checksum = getChecksum(inputBytes, buffer_size-1);
     inputBytes[buffer_size-1] = checksum; 
-    eeprom.writeBytes(address, buffer_size, inputBytes);
+    state.eeprom.writeBytes(address, buffer_size, inputBytes);
 }
 
 
@@ -320,11 +323,11 @@ void makeMaintenance(String userInputPrev) {
   Serial.print("command "); Serial.println(command);
 
   if (command == 0) {
-    delay(1000);
-    DateTime now = RTC.now(); 
+    state.delay(1000);
+    DateTime now = state.RTC.now(); 
     unsigned long currentUnixTimestamp = now.unixtime();
     echo_morse_reversed_int(currentUnixTimestamp);
-    delay(1000);
+    state.delay(1000);
     playMaintenanceMelody(melodyMain, melodyMainSize);
   }
   if (command == 1) {
@@ -334,14 +337,14 @@ void makeMaintenance(String userInputPrev) {
         bool result = disableKey(keyNum);
         if (result) {
             accessDenied();
-            delay(500);
+            state.delay(500);
             playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
         } else {
             playMaintenanceMelody(melodyMain, melodyMainSize);
         };
     } else {
       accessDenied();
-      delay(500);
+      state.delay(500);
       playMaintenanceMelody(melodyUnderworld, melodyUnderworldSize);
     };
   };
@@ -350,8 +353,8 @@ void makeMaintenance(String userInputPrev) {
 
 void loop(){
 
-  digitalWrite(LOCK_PIN, LOW);  
-  boolean openButtonIsDown = digitalRead(BUTTON_OPEN_PIN);
+  state.digitalWrite(LOCK_PIN, LOW);  
+  boolean openButtonIsDown = state.digitalRead(BUTTON_OPEN_PIN);
   if (openButtonIsDown) {
      // Serial.println(__TIMESTAMP__);   
      int timeout = 30; // ms
@@ -359,9 +362,9 @@ void loop(){
      int limit = 7;
      int press_counter = 0;
      for (int i = 0; i < iterations; i++) { 
-       tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
-       delay(timeout); 
-       if (digitalRead(BUTTON_OPEN_PIN) == HIGH) {
+       state.tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
+       state.delay(timeout); 
+       if (state.digitalRead(BUTTON_OPEN_PIN) == HIGH) {
            press_counter += 1;
        }; 
      };
@@ -372,9 +375,9 @@ void loop(){
      }; 
   };
 
-  char customKey = customKeypad.getKey();
+  char customKey = state.customKeypad.getKey();
   if (customKey){
-    tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
+    state.tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
     if (customKey == '*') {
       userInput = "";
       userInputPrev = "";
@@ -397,7 +400,7 @@ void loop(){
         userInput = "";
       };
       userInput += customKey;
-      delay(100);
+      state.delay(100);
     };
   }
 }
