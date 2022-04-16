@@ -311,7 +311,7 @@ bool disableKey(State* state, const int keyNum) {
 }
 
 
-void makeMaintenance(State* state, const String userInputPrev) {
+void makeMaintenance(State* state, const DateTime now, const String userInputPrev) {
   Serial.println(userInputPrev);
   const int melodyUnderworldSize = sizeof(melodyUnderworld) / sizeof(int);
   const int melodyMainSize = sizeof(melodyMain) / sizeof(int);
@@ -323,7 +323,6 @@ void makeMaintenance(State* state, const String userInputPrev) {
 
   if (command == 0) {
     state->delay(1000);
-    DateTime now = state->RTC.now(); 
     const unsigned long currentUnixTimestamp = now.unixtime();
     echo_morse_reversed_int(state, currentUnixTimestamp);
     state->delay(1000);
@@ -386,7 +385,7 @@ void loop(){
       const DateTime now = state->RTC.now(); 
       if (isTOTPCodeValid(state, now, state->userInput)) {
           if (isMaintenance(state->userInput, state->userInputPrev)) {
-            makeMaintenance(state, state->userInputPrev);
+            makeMaintenance(state, now, state->userInputPrev);
           } else {
             unlockTheDoor(state);
           };
