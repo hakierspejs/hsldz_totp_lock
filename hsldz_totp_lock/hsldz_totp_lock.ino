@@ -52,6 +52,8 @@ struct State {
     void (*tone)(uint8_t, unsigned int, long unsigned int) = tone;
     int (*digitalRead)(uint8_t) = digitalRead;
     void (*delayMicroseconds)(unsigned int) = delayMicroseconds;
+    String userInput = "";
+    String userInputPrev = "";
 } global_state;
 
 const bool morseKeys[10][5] = {
@@ -89,9 +91,6 @@ int melodyUnderworld[] = {
   NOTE_AS3, NOTE_AS4,
 };
 
-
-String userInput = "";
-String userInputPrev = "";
 
 
 void setup(){
@@ -381,27 +380,27 @@ void loop(){
   if (customKey){
     state->tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
     if (customKey == '*') {
-      userInput = "";
-      userInputPrev = "";
+      state->userInput = "";
+      state->userInputPrev = "";
     }
     else if (customKey == '#') {
-      if (isTOTPCodeValid(state, userInput)) {
-          if (isMaintenance(userInput, userInputPrev)) {
-            makeMaintenance(state, userInputPrev);
+      if (isTOTPCodeValid(state, state->userInput)) {
+          if (isMaintenance(state->userInput, state->userInputPrev)) {
+            makeMaintenance(state, state->userInputPrev);
           } else {
             unlockTheDoor(state);
           };
       } else {
          accessDenied(state);
       };
-      userInput = "";
-      userInputPrev = "";
+      state->userInput = "";
+      state->userInputPrev = "";
     } else {
-      if (userInput.length() == 8) {
-        userInputPrev = userInput;
-        userInput = "";
+      if (state->userInput.length() == 8) {
+        state->userInputPrev = state->userInput;
+        state->userInput = "";
       };
-      userInput += customKey;
+      state->userInput += customKey;
       state->delay(100);
     };
   }
