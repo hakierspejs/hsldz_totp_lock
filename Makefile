@@ -38,7 +38,8 @@ uno-configure-ds3231: ac-build
 	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/configure_DS3231 && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ && arduino-cli upload -p $(DEVICE_SERIAL) --fqbn arduino:avr:uno"
 	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/configure_time.py $(DEVICE_SERIAL)
 	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/dump_eeprom.py $(DEVICE_SERIAL)
-	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
+	# Do not uncomment this one - it will reset all locked keys.
+	#$(DOCKER_PYTHON_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
 
 uno-upload-lock: ac-build
 	$(DOCKER_ARDUINO_CLI) arduino-cli board list
