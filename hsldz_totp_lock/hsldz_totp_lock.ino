@@ -4,7 +4,8 @@
 #include <DS3231.h>
 #include <Wire.h>  
 #include <Eeprom24C32_64.h> 
-#include <Eeprom24C04_16.h> 
+#include <Eeprom24C04_16.h>
+#include <Watchdog.h>
 
 
 #define BUZZER_PIN 10
@@ -48,6 +49,7 @@ Keypad customKeypad = Keypad( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS
 // RTC 
 RTClib RTC;
 
+Watchdog watchdog;
 
 
 const bool morseKeys[10][5] = {
@@ -91,11 +93,13 @@ String userInputPrev = "";
 
 
 void setup(){
+  watchdog.reset();
   Serial.begin(9600);
   Wire.begin();
   eeprom.initialize();
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
+  watchdog.enable(Watchdog::TIMEOUT_8S);
   int size = sizeof(melodyMain) / sizeof(int);
   playMaintenanceMelody(melodyMain, size);
 }
@@ -109,6 +113,7 @@ void echo_morse_reversed_int(unsigned long value) {
     // Serial.println(digit);
     delay(MORSE_SOUND_TIME * MORSE_PAUSE); 
     for(int i =0; i < 5; i++ ) { 
+	  watchdog.reset();
       if (morseKeys[digit][i]) {
           tone(BUZZER_PIN, MORSE_FREQ, MORSE_SOUND_TIME);
           delay(MORSE_SOUND_TIME + MORSE_SOUND_TIME); 
@@ -266,6 +271,7 @@ void buzz(int targetPin, long frequency, long length) {
 void playMaintenanceMelody(int melody[], int size) {
     int melodyPin = BUZZER_PIN;
     for (int thisNote = 0; thisNote < size; thisNote++) {
+	  watchdog.reset();
       // to calculate the note duration, take one second
       // divided by the note type.
       //e.g. quarter note = 1000 / 4, eighth note = 1000/8, etc.
@@ -352,10 +358,12 @@ void makeMaintenance(String userInputPrev) {
 
 
 void loop(){
+  watchdog.reset();
   digitalWrite(LOCK_PIN, LOW);
   char customKey = customKeypad.getKey();
   if (customKey){
     tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
+    watchdog.reset();
     if (customKey == '*') {
       userInput = "";
       userInputPrev = "";
