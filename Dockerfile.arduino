@@ -6,7 +6,7 @@ ARG USER=docker
 ARG UID=1000
 ARG GID=1000
 
-RUN groupadd --gid=${GID} g${GID} && useradd -m ${USER} --uid=${UID} -g${GID} -G dialout
+RUN useradd --create-home $USER -u $UID
 
 RUN cd /tmp/ \
     && wget https://github.com/arduino/arduino-cli/releases/download/0.18.3/arduino-cli_0.18.3_Linux_64bit.tar.gz \ 
@@ -16,10 +16,13 @@ RUN cd /tmp/ \
     && cp ./arduino-cli /usr/bin/arduino-cli \
     && chmod +x /usr/bin/arduino-cli
 
+RUN usermod -a -G dialout ${USER} 
+
+RUN arduino-cli core update-index && arduino-cli core install arduino:avr
+
 USER ${UID}:${GID}
 
 WORKDIR /usr/src/app
 
-RUN arduino-cli core update-index && arduino-cli core install arduino:avr
 
 CMD [ "arduino-cli" ]

@@ -1,7 +1,7 @@
 DEVICE_SERIAL ?= /dev/ttyUSB0
 KEY_NUM ?= 99
-DOCKER_ARDUINO_CLI = docker run --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm arduino-cli
-DOCKER_PYTHON_CLI = docker run --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm hs-ldz-totp-lock
+DOCKER_ARDUINO_CLI = docker run --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it -u root --rm arduino-cli
+DOCKER_PYTHON_CLI = docker run --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it -u root --rm hs-ldz-totp-lock
 
 decrypt:
 	openssl aes-256-cbc -d -a -md sha512 -pbkdf2 -iter 100000 -salt -pass env:HSLOCK_SECRET -in backup/rawdata.out.enc -out backup/rawdata.out
@@ -39,7 +39,7 @@ uno-configure-ds3231: ac-build build
 	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/configure_time.py $(DEVICE_SERIAL)
 	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/dump_eeprom.py $(DEVICE_SERIAL)
 	# Do not uncomment this one - it will reset all locked keys unless the Git copy is up to date.
-	#$(DOCKER_PYTHON_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
+	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
 
 uno-upload-lock: ac-build
 	$(DOCKER_ARDUINO_CLI) arduino-cli board list
@@ -52,4 +52,27 @@ uno-upload-isp: ac-build
 	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/ArduinoISP && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ && arduino-cli upload --verbose --verify -p $(DEVICE_SERIAL) --fqbn arduino:avr:uno"
 
 pro-mini-upload-lock: ac-build
+	echo RESET pin is 10
+	echo see https://docs.arduino.cc/built-in-examples/arduino-isp/ArduinoISP/
 	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/hsldz_totp_lock && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ && arduino-cli upload --verbose --verify -p $(DEVICE_SERIAL) --fqbn arduino:avr:mini --programmer arduinoasisp"
+
+
+
+nano-configure-ds3231: ac-build build
+	$(DOCKER_ARDUINO_CLI) arduino-cli board list
+	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/configure_DS3231 && arduino-cli compile --fqbn arduino:avr:nano --libraries=../vendor/librares/ && arduino-cli upload -p $(DEVICE_SERIAL) --fqbn arduino:avr:nano"
+	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/configure_time.py $(DEVICE_SERIAL)
+	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/dump_eeprom.py $(DEVICE_SERIAL)
+	# Do not uncomment this one - it will reset all locked keys unless the Git copy is up to date.
+	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
+
+nano-configure-time: ac-build build
+	$(DOCKER_ARDUINO_CLI) arduino-cli board list
+	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/configure_DS3231 && arduino-cli compile --fqbn arduino:avr:nano --libraries=../vendor/librares/ && arduino-cli upload -p $(DEVICE_SERIAL) --fqbn arduino:avr:nano"
+	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/configure_time.py $(DEVICE_SERIAL)
+
+
+nano-upload-lock: ac-build
+	$(DOCKER_ARDUINO_CLI) arduino-cli board list
+	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/hsldz_totp_lock && arduino-cli compile --fqbn arduino:avr:nano --libraries=../vendor/librares/ && arduino-cli upload -p $(DEVICE_SERIAL) --fqbn arduino:avr:nano"
+

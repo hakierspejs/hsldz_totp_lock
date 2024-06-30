@@ -10,7 +10,6 @@
 
 #define BUZZER_PIN 10
 #define LOCK_PIN 12
-#define BUTTON_OPEN_PIN 13
 
 #define SOUND_TIME_BUTTON_PRESS 50
 #define SOUND_TIME_OPEN 3000
@@ -21,9 +20,9 @@
 #define FREQ_OPEN 2500
 #define FREQ_ERROR 800
 
-#define MORSE_SOUND_TIME  100  
-#define MORSE_PAUSE 15
-#define MORSE_FREQ 500 
+#define MORSE_SOUND_TIME 60
+#define MORSE_PAUSE 5
+#define MORSE_FREQ 880
 
 #define EEPROM_ADDRESS 0x57
 #define EEPROM_CODE 32
@@ -98,7 +97,6 @@ void setup(){
   Serial.begin(9600);
   Wire.begin();
   eeprom.initialize();
-  pinMode(BUTTON_OPEN_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
   watchdog.enable(Watchdog::TIMEOUT_8S);
@@ -223,16 +221,21 @@ bool isTOTPCodeValid(String userInput) {
   }; 
   DateTime now = RTC.now(); 
   unsigned long currentUnixTimestamp = now.unixtime(); 
-  int timeDeviations[5] = {-60, -30, 0, 30, 60};
+  int timeDeviations[7] = {0, -30, 30, 60, -60, -90, 90};
   String userCode = userInput.substring(2, 8);
   Serial.print("Time: "); Serial.println(currentUnixTimestamp);
   TOTP totp = TOTP(keyBytes, hmacKeySize);
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 7; i++) {
     int delta = timeDeviations[i];
     char* correctCode = totp.getCode(currentUnixTimestamp + delta);
     // Serial.println(userCode);
     // Serial.println(correctCode);
     if (userCode == correctCode) {
+      if (i > 4) {
+        DateTime now = RTC.now(); 
+        unsigned long currentUnixTimestamp = now.unixtime();
+        echo_morse_reversed_int(currentUnixTimestamp);
+      }
       // Serial.println("+++++++++++++++++++++++");
       return userCode == correctCode;
     }
@@ -356,33 +359,11 @@ void makeMaintenance(String userInputPrev) {
 
 void loop(){
   watchdog.reset();
-  digitalWrite(LOCK_PIN, LOW);  
-  boolean openButtonIsDown = digitalRead(BUTTON_OPEN_PIN);
-  if (openButtonIsDown) {
-     // Serial.println(__TIMESTAMP__);   
-     int timeout = 30; // ms
-     int iterations = 15; 
-     int limit = 7;
-     int press_counter = 0;
-     for (int i = 0; i < iterations; i++) { 
-	   watchdog.reset();
-       tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
-       delay(timeout); 
-       if (digitalRead(BUTTON_OPEN_PIN) == HIGH) {
-           press_counter += 1;
-       }; 
-     };
-     if (press_counter > limit) {
-        unlockTheDoor(); 
-     } else {
-        press_counter = 0;
-     }; 
-  };
-
+  digitalWrite(LOCK_PIN, LOW);
   char customKey = customKeypad.getKey();
   if (customKey){
-	watchdog.reset();
     tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
+    watchdog.reset();
     if (customKey == '*') {
       userInput = "";
       userInputPrev = "";
