@@ -9,7 +9,6 @@
 
 #define BUZZER_PIN 10
 #define LOCK_PIN 12
-#define BUTTON_OPEN_PIN 13
 
 #define SOUND_TIME_BUTTON_PRESS 50
 #define SOUND_TIME_OPEN 3000
@@ -95,7 +94,6 @@ void setup(){
   Serial.begin(9600);
   Wire.begin();
   eeprom.initialize();
-  pinMode(BUTTON_OPEN_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(LOCK_PIN, OUTPUT);
   int size = sizeof(melodyMain) / sizeof(int);
@@ -354,29 +352,7 @@ void makeMaintenance(String userInputPrev) {
 
 
 void loop(){
-
-  digitalWrite(LOCK_PIN, LOW);  
-  boolean openButtonIsDown = digitalRead(BUTTON_OPEN_PIN);
-  if (openButtonIsDown) {
-     // Serial.println(__TIMESTAMP__);   
-     int timeout = 30; // ms
-     int iterations = 15; 
-     int limit = 7;
-     int press_counter = 0;
-     for (int i = 0; i < iterations; i++) { 
-       tone(BUZZER_PIN, FREQ_OPEN_BUTTON_PRESS, timeout - 10);
-       delay(timeout); 
-       if (digitalRead(BUTTON_OPEN_PIN) == HIGH) {
-           press_counter += 1;
-       }; 
-     };
-     if (press_counter > limit) {
-        unlockTheDoor(); 
-     } else {
-        press_counter = 0;
-     }; 
-  };
-
+  digitalWrite(LOCK_PIN, LOW);
   char customKey = customKeypad.getKey();
   if (customKey){
     tone(BUZZER_PIN, FREQ_BUTTON_PRESS, SOUND_TIME_BUTTON_PRESS);
