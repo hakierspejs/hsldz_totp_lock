@@ -1,7 +1,7 @@
-DEVICE_SERIAL ?= /dev/ttyACM0
+DEVICE_SERIAL ?= /dev/ttyUSB0
 KEY_NUM ?= 99
 DOCKER_ARDUINO_CLI = docker run --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm arduino-cli
-DOCKER_PYTHON_CLI = docker run --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm hs-ldz-totp-lock
+DOCKER_PYTHON_CLI = docker run --privileged --device=$(DEVICE_SERIAL) --mount src="$(shell pwd)",target=/usr/src/app,type=bind -it --rm hs-ldz-totp-lock
 
 decrypt:
 	openssl aes-256-cbc -d -a -md sha512 -pbkdf2 -iter 100000 -salt -pass env:HSLOCK_SECRET -in backup/rawdata.out.enc -out backup/rawdata.out
@@ -33,13 +33,13 @@ generate-example-secrets: build
 	echo 'xxd -c 22 -s 44 -l 22 ./backup/rawdata.out'
 	xxd -c 22 -s 0 -l 88 ./backup/rawdata.out
 
-uno-configure-ds3231: ac-build
+uno-configure-ds3231: ac-build build
 	$(DOCKER_ARDUINO_CLI) arduino-cli board list
-	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/configure_DS3231 && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ && arduino-cli upload -p $(DEVICE_SERIAL) --fqbn arduino:avr:uno"
-	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/configure_time.py $(DEVICE_SERIAL)
-	$(DOCKER_PYTHON_CLI) python ./configure_DS3231/dump_eeprom.py $(DEVICE_SERIAL)
+	$(DOCKER_ARDUINO_CLI) bash -c "cd /usr/src/app/configure_DS3231 && arduino-cli compile --fqbn arduino:avr:uno --libraries=../vendor/librares/ &&  arduino-cli upload -p $(DEVICE_SERIAL) --fqbn arduino:avr:uno -v "
+	#$(DOCKER_ARDUINO_CLI) python ./configure_DS3231/dump_eeprom.py $(DEVICE_SERIAL)
+	$(DOCKER_PYTHON_CLI) bash -c "python3 ./configure_DS3231/configure_time.py $(DEVICE_SERIAL)"
 	# Do not uncomment this one - it will reset all locked keys unless the Git copy is up to date.
-	#$(DOCKER_PYTHON_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
+	#$(DOCKER_ARDUINO_CLI) python ./configure_DS3231/load_eeprom.py $(DEVICE_SERIAL) backup/rawdata.out
 
 uno-upload-lock: ac-build
 	$(DOCKER_ARDUINO_CLI) arduino-cli board list
