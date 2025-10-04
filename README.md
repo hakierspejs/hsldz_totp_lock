@@ -1,5 +1,15 @@
 # The Hackerspace TOTP door lock
 
+### !!! QUARTERLY MAINTENANCE
+
+Take lock apart, connect like in the picture below and do:
+
+`sudo make uno-configure-ds3231`
+
+![pinout](./docs/sync_clock.jpeg)
+
+If you have problems, check out `sync_clock` branch. It's a mess, but worked.
+
 ### Description
 The TOTP-lock is based on Arduino Pro Mini Atmega328 - 5V 16MHz. The parts connected to the microcontroller are: 
  - [the relay](https://allegro.pl/oferta/modul-1-kanalowy-przekaznik-5v-10a-7953863748), which opens the electric strike ([PIN 12](https://github.com/hakierspejs/hsldz_totp_lock/blob/main/hsldz_totp_lock/hsldz_totp_lock.ino#L11)) 
